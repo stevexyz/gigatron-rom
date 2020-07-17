@@ -101,7 +101,10 @@ namespace Cpu
 #ifdef _WIN32
     void enableWin32ConsoleSaveFile(bool consoleSaveFile);
 #endif
-    
+
+    uint64_t get_ROMexecutionCount(int addr);
+    uint64_t get_IRexecutionCount(int instr);
+
     Endianness getHostEndianness(void);
     void swapEndianness(uint16_t& value);
     void swapEndianness(uint32_t& value);

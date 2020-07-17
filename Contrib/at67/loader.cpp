@@ -5,6 +5,8 @@
 #include <fstream>
 #include <algorithm>
 #include <string.h>
+#include <iostream>
+using namespace std;
 
 #ifdef _WIN32
 #include <windows.h>
@@ -333,6 +335,41 @@ namespace Loader
         fprintf(stderr, "**********************************************\n");
 
         return totalSize;
+    }
+
+    bool saveInstructionStatisticsFiles(std::string const& filenameMemory, std::string const& filenameInstr)
+    {
+        std::ofstream outfileMemory(filenameMemory, std::ios::out);
+        if(!outfileMemory.is_open())
+        {
+            fprintf(stderr, "Loader::saveInstructionStatisticsFiles() : failed to open '%s'\n", filenameMemory.c_str());
+            return false;
+        }
+        std::ofstream outfileInstr(filenameInstr, std::ios::out);
+        if(!outfileInstr.is_open())
+        {
+            fprintf(stderr, "Loader::saveInstructionStatisticsFiles() : failed to open '%s'\n", filenameInstr.c_str());
+            return false;
+        }
+
+        // temp to debug...
+        ofstream ofs("/tmp/gigatrontmplogfile.txt");
+        clog.rdbuf(ofs.rdbuf());
+
+        clog << "\n**ROM ADDRESSES**\n";
+        for(int i=0; i<ROM_SIZE; i++)
+        {
+            outfileMemory << i << ":" << Cpu::get_ROMexecutionCount(i) << "\n";
+            clog << i << ":" << Cpu::get_ROMexecutionCount(i) << "\n";
+        }
+        clog << "\n**INSTRUCTIONS**\n";
+        for(int i=0; i<256; i++)
+        {
+            outfileInstr << i << ":" << Cpu::get_IRexecutionCount(i) << "\n";
+            clog << i << ":" << Cpu::get_IRexecutionCount(i) << "\n";
+        }
+
+        return true;
     }
 
 

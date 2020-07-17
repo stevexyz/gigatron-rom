@@ -53,6 +53,8 @@ namespace Cpu
 
     std::vector<uint8_t> _RAM;
     uint8_t _ROM[ROM_SIZE][2];
+    uint64_t _ROMexecutionCount[ROM_SIZE];
+    uint64_t _IRexecutionCount[256];
     std::vector<uint8_t*> _romFiles;
     RomType _romType = ROMERR;
     std::map<std::string, RomType> _romTypeMap = {{"ROMV1", ROMv1}, {"ROMV2", ROMv2}, {"ROMV3", ROMv3}, {"ROMV4", ROMv4}, {"ROMV5A", ROMv5a}, {"DEVROM", DEVROM}};
@@ -85,7 +87,7 @@ namespace Cpu
     }
 
 
-//#define COLLECT_INST_STATS
+#define COLLECT_INST_STATS
 #if defined(COLLECT_INST_STATS)
     struct InstCount
     {
@@ -104,6 +106,7 @@ namespace Cpu
             return (a._count > b._count);
         });
 
+        fprintf(stderr, "\n**ORIGINAL STATS\n");
         for(int i=0; i<_instCounts.size(); i++)
         {
             float percent = float(_instCounts[i]._count)/float(_totalCount)*100.0f;
@@ -116,6 +119,21 @@ namespace Cpu
 
         fprintf(stderr, "Total instructions:%lld\n", _totalCount);
         fprintf(stderr, "Total percentage:%f\n", _totalPercent);
+
+        //--
+
+        fprintf(stderr, "\n**NATIVE INSTRUCTIONS\n");
+        for(int i=0; i<256; i++)
+        {
+            fprintf(stderr, "%02x %09lld\n", i, _IRexecutionCount[i]);
+        }
+
+        fprintf(stderr, "\n**ROM ADDRESSES\n");
+        for(int i=0; i<ROM_SIZE; i++)
+        {
+            fprintf(stderr, "%04x %05u %09lld\n", i, i, _ROMexecutionCount[i]);
+        }
+
     }
 #endif
 
@@ -125,6 +143,17 @@ namespace Cpu
         _consoleSaveFile = consoleSaveFile;
     }
 #endif
+
+
+    uint64_t get_ROMexecutionCount(int addr)
+    {
+        return _ROMexecutionCount[addr];
+    }
+    uint64_t get_IRexecutionCount(int instr)
+    {
+        return _IRexecutionCount[instr];
+    }
+
 
     Endianness getHostEndianness(void)
     {
@@ -703,6 +732,15 @@ namespace Cpu
 
         // Initialise COM port here so that we can see error messages
         Loader::openComPort();
+
+
+	// For now no instruction has been executed
+        for(int i=0; i<ROM_SIZE; i++)
+            _ROMexecutionCount[i] = 0;
+        for(int i=0; i<256; i++)
+             _IRexecutionCount[i] = 0;
+
+
     }
 
     void cycle(const State& S, State& T)
@@ -713,6 +751,10 @@ namespace Cpu
         // Instruction Fetch
         T._IR = _ROM[S._PC][ROM_INST]; 
         T._D  = _ROM[S._PC][ROM_DATA];
+
+	    // Increase the number of time the instruction at that address has been executed
+        _ROMexecutionCount[T._PC]++;
+        _IRexecutionCount[T._IR]++;
 
         // Adapted from https://github.com/kervinck/gigatron-rom/blob/master/Contrib/dhkolf/libgtemu/gtemu.c
         // Optimise for the statistically most common instructions

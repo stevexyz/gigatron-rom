@@ -10,6 +10,7 @@
 
 #ifndef STAND_ALONE
 #include "editor.h"
+#include "loader.h"
 #include "graphics.h"
 #include "menu.h"
 #include "terminal.h"
@@ -806,6 +807,10 @@ namespace Image
         // Quit
         else if(keyCode == Editor::getEmulatorScanCode("Quit")  &&  keyMod == Editor::getEmulatorKeyMod("Quit"))
         {
+
+            //TEMP!
+            Loader::saveInstructionStatisticsFiles("memory_statistics_log.txt", "instruction_statistics_log.txt");
+
             Cpu::shutdown();
             exit(0);
         }
@@ -820,6 +825,11 @@ namespace Image
         {
             _firstTimeRender = true;
             Terminal::switchToTerminal();
+        }
+        // Statistics logs
+        else if(keyCode == Editor::getEmulatorScanCode("DumpStatisctics")  &&  keyMod == Editor::getEmulatorKeyMod("DumpStatistics"))
+        {
+            Loader::saveInstructionStatisticsFiles("memory_statistics_log.txt", "instruction_statistics_log.txt");
         }
     }
 
